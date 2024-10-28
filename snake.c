@@ -18,20 +18,20 @@ enum Rotation {R_UP,R_DOWN,R_RIGHT, R_LEFT};
 
 enum block_type{
     EMPTY,
-    TALE,
+    SNAKE,
     APPLE,
 };
 
-struct SnakeBlock{
+typedef struct {
     int x;
     int y;
     enum block_type BlockType;
-};
+} SnakeBlock;
 
 
 void draw_map();
-int move_tale(struct SnakeBlock* snake_tale[], struct SnakeBlock map[HEIGHT][WIDTH], int* snake_length, enum Rotation rotation);
-void create_apple(struct SnakeBlock map[HEIGHT][WIDTH]);
+int move_snake(SnakeBlock* snake[], SnakeBlock board[HEIGHT][WIDTH], int* snake_length, enum Rotation rotation);
+void create_apple(SnakeBlock board[HEIGHT][WIDTH]);
 
 int main(int argc, char *argv[]){
     
@@ -59,11 +59,11 @@ int main(int argc, char *argv[]){
     srand(time(NULL));
     curs_set(false);
 
-    struct SnakeBlock map[HEIGHT][WIDTH]; // create board (I named this MAP)
+    SnakeBlock board[HEIGHT][WIDTH];
 
     for (int y = 0; y <= HEIGHT - 1; y++){
         for (int x = 0; x <= WIDTH - 1; x++){
-            map[y][x] = (struct SnakeBlock){x, y, EMPTY};
+            board[y][x] = (SnakeBlock){x, y, EMPTY};
         }
     }
 
@@ -73,15 +73,15 @@ int main(int argc, char *argv[]){
     int now, last_time = 0;
     int ms = 10000;
     enum Rotation rotation = R_DOWN;
-    struct SnakeBlock * snake_array[HEIGHT*WIDTH];
-    map[HEIGHT / 2][WIDTH / 2].BlockType = TALE; // <--- create a hat
-    snake_array[0] = &map[HEIGHT / 2][WIDTH / 2];
+    SnakeBlock * snake_array[HEIGHT*WIDTH];
+    board[HEIGHT / 2][WIDTH / 2].BlockType = SNAKE; // <--- create a hat
+    snake_array[0] = &board[HEIGHT / 2][WIDTH / 2];
 
     int snake_length = 1;
     int last_input;
     draw_map();
     mvprintw(HEIGHT+2, 3, "SCORE: %d", SCORE);
-    create_apple(map);
+    create_apple(board);
     while (true){
         if ((now = clock())/ms - last_time/ms >= upd_time){ // <--- limit fps
             last_time = now;
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]){
             }
             input_key = first_key = ERR;
 
-            result = move_tale(snake_array, map, &snake_length, rotation);
+            result = move_snake(snake_array, board, &snake_length, rotation);
             refresh();
             if (!result){
                 endwin();
@@ -140,20 +140,20 @@ void draw_map(){
     }
 }
 
-int move_tale(struct SnakeBlock* snake_tale[], struct SnakeBlock map[HEIGHT][WIDTH], int* snake_length, enum Rotation rotation){
+int move_snake(SnakeBlock* snake[], SnakeBlock board[HEIGHT][WIDTH], int* snake_length, enum Rotation rotation){
     int i;
     int length = *snake_length;
-    int hat_x = snake_tale[0]->x; int hat_y = snake_tale[0]->y;
-    struct SnakeBlock* last_tale_elem = snake_tale[length - 1];
+    int hat_x = snake[0]->x; int hat_y = snake[0]->y;
+    SnakeBlock* last_snake_elem = snake[length - 1];
 
-    snake_tale[length - 1]->BlockType = EMPTY;
-    mvprintw(snake_tale[length - 1]->y+1, snake_tale[length - 1]->x*2+1, " ");
+    snake[length - 1]->BlockType = EMPTY;
+    mvprintw(snake[length - 1]->y+1, snake[length - 1]->x*2+1, " ");
 
     for (i = length - 1; i > 0; i--){
-        snake_tale[i] = &map[snake_tale[i - 1]->y][snake_tale[i - 1]->x];
-        snake_tale[i]->BlockType = TALE;
+        snake[i] = &board[snake[i - 1]->y][snake[i - 1]->x];
+        snake[i]->BlockType = SNAKE;
 
-        mvprintw(snake_tale[i]->y + 1, snake_tale[i]->x*2 + 1, "#");
+        mvprintw(snake[i]->y + 1, snake[i]->x*2 + 1, "#");
     }
     switch (rotation){
         case R_DOWN:
@@ -174,28 +174,28 @@ int move_tale(struct SnakeBlock* snake_tale[], struct SnakeBlock map[HEIGHT][WID
         break;
     }
     mvprintw(hat_y + 1, hat_x*2 + 1, "@");
-    if (map[hat_y][hat_x].BlockType == TALE) // <--- check tale collision
+    if (board[hat_y][hat_x].BlockType == SNAKE) // <--- check snake collision
         return 0;
-    if (map[hat_y][hat_x].BlockType == APPLE){  // <--- check apple collision
-        last_tale_elem->BlockType = TALE;
-        snake_tale[length] = last_tale_elem;
+    if (board[hat_y][hat_x].BlockType == APPLE){  // <--- check apple collision
+        last_snake_elem->BlockType = SNAKE;
+        snake[length] = last_snake_elem;
         (*snake_length)++;
-        mvprintw(last_tale_elem->y+1, last_tale_elem->x*2+1, "#");
-        create_apple(map);
+        mvprintw(last_snake_elem->y+1, last_snake_elem->x*2+1, "#");
+        create_apple(board);
         mvprintw(HEIGHT + 2, 3, "SCORE: %d", ++SCORE);
     }
-    snake_tale[0] = &map[hat_y][hat_x];
-    snake_tale[0]->BlockType = TALE;
+    snake[0] = &board[hat_y][hat_x];
+    snake[0]->BlockType = SNAKE;
     return 1;
 }
 
-void create_apple(struct SnakeBlock map[HEIGHT][WIDTH]){
-    struct SnakeBlock *choose_list[HEIGHT * WIDTH];
+void create_apple(SnakeBlock board[HEIGHT][WIDTH]){
+    SnakeBlock *choose_list[HEIGHT * WIDTH];
     int count = 0;
     for (int y = 0; y <= HEIGHT - 1; y++){
         for (int x = 0; x <= WIDTH - 1; x++){
-            if (map[y][x].BlockType == EMPTY){
-                choose_list[count] = &map[y][x];
+            if (board[y][x].BlockType == EMPTY){
+                choose_list[count] = &board[y][x];
                 count++;
             }
         }
@@ -204,3 +204,4 @@ void create_apple(struct SnakeBlock map[HEIGHT][WIDTH]){
     choose_list[random_block]->BlockType = APPLE;
     mvprintw(choose_list[random_block]->y + 1, choose_list[random_block]->x * 2 + 1, "*");
 }
+
