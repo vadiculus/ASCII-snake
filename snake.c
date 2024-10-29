@@ -32,6 +32,7 @@ typedef struct {
 void draw_map();
 int move_snake(SnakeBlock* snake[], SnakeBlock board[HEIGHT][WIDTH], int* snake_length, enum Rotation rotation);
 void create_apple(SnakeBlock board[HEIGHT][WIDTH]);
+int check_win(SnakeBlock* snake[], int snake_length);
 
 int main(int argc, char *argv[]){
     
@@ -118,6 +119,15 @@ int main(int argc, char *argv[]){
                 printf("/_/      /_/  |_|  /___/  /_____/  /_____/  /_____/  (_)  (_)  (_) \n");
                 break;
             }
+            if (check_win(snake_array, snake_length)){
+                endwin();
+                printf(" _       __   ____   _   __   __\n");
+                printf("| |     / /  /  _/  / | / /  / /\n");
+                printf("| | /| / /   / /   /  |/ /  / / \n");
+                printf("| |/ |/ /  _/ /   / /|  /  /_/  \n");
+                printf("|__/|__/  /___/  /_/ |_/  (_)   \n");
+                break;
+            }
         }
     }
     
@@ -143,7 +153,7 @@ void draw_map(){
 int move_snake(SnakeBlock* snake[], SnakeBlock board[HEIGHT][WIDTH], int* snake_length, enum Rotation rotation){
     int i;
     int length = *snake_length;
-    int hat_x = snake[0]->x; int hat_y = snake[0]->y;
+    int head_x = snake[0]->x; int head_y = snake[0]->y;
     SnakeBlock* last_snake_elem = snake[length - 1];
 
     snake[length - 1]->BlockType = EMPTY;
@@ -157,26 +167,26 @@ int move_snake(SnakeBlock* snake[], SnakeBlock board[HEIGHT][WIDTH], int* snake_
     }
     switch (rotation){
         case R_DOWN:
-        if (hat_y >= HEIGHT - 1) hat_y = 0;
-        else (hat_y)++;
+        if (head_y >= HEIGHT - 1) head_y = 0;
+        else head_y++;
         break;
         case R_UP:
-        if (hat_y <= 0) hat_y = HEIGHT - 1;
-        else (hat_y)--;
+        if (head_y <= 0) head_y = HEIGHT - 1;
+        else head_y--;
         break;
         case R_RIGHT:
-        if (hat_x >= WIDTH - 1) hat_x = 0;
-        else (hat_x)++;
+        if (head_x >= WIDTH - 1) head_x = 0;
+        else head_x++;
         break;
         case R_LEFT:
-        if (hat_x <= 0) hat_x = WIDTH - 1;
-        else (hat_x)--;
+        if (head_x <= 0) head_x = WIDTH - 1;
+        else head_x--;
         break;
     }
-    mvprintw(hat_y + 1, hat_x*2 + 1, "@");
-    if (board[hat_y][hat_x].BlockType == SNAKE) // <--- check snake collision
+    mvprintw(head_y + 1, head_x*2 + 1, "@");
+    if (board[head_y][head_x].BlockType == SNAKE) // <--- check snake collision
         return 0;
-    if (board[hat_y][hat_x].BlockType == APPLE){  // <--- check apple collision
+    if (board[head_y][head_x].BlockType == APPLE){  // <--- check apple collision
         last_snake_elem->BlockType = SNAKE;
         snake[length] = last_snake_elem;
         (*snake_length)++;
@@ -184,7 +194,7 @@ int move_snake(SnakeBlock* snake[], SnakeBlock board[HEIGHT][WIDTH], int* snake_
         create_apple(board);
         mvprintw(HEIGHT + 2, 3, "SCORE: %d", ++SCORE);
     }
-    snake[0] = &board[hat_y][hat_x];
+    snake[0] = &board[head_y][head_x];
     snake[0]->BlockType = SNAKE;
     return 1;
 }
@@ -203,5 +213,13 @@ void create_apple(SnakeBlock board[HEIGHT][WIDTH]){
     int random_block = rand() % count;
     choose_list[random_block]->BlockType = APPLE;
     mvprintw(choose_list[random_block]->y + 1, choose_list[random_block]->x * 2 + 1, "*");
+}
+
+int check_win(SnakeBlock* snake[], int snake_length){
+    if (snake_length >= HEIGHT * WIDTH){
+        return 1;
+    }
+    return 0;
+
 }
 
